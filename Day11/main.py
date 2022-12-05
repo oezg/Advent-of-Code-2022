@@ -1,4 +1,6 @@
-def lines_generator():
+from typing import Iterator
+
+def lines_generator() -> Iterator[str]:
     with open("input.txt", "r") as file:
         for line in file:
             yield line.rstrip()
