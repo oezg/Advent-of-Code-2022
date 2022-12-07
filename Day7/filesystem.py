@@ -1,9 +1,12 @@
+from collections import deque
+
 class Directory:
     def __init__(self, name: str, parent: "Directory") -> None:
         self.name = name
         self.parent = parent
         self.directories: list["Directory"] = []
         self.files: list[File] = []
+        self.path = self.set_path()
 
     def get_name(self) -> str:
         return self.name
@@ -23,16 +26,30 @@ class Directory:
     def add_file(self, file: "File") -> None:
         self.get_files().append(file)
 
-    def get_size(self, subtotal=0) -> int:
-        subtotal += sum(
-            file.get_size()
-            for file in self.get_files()
+    def set_path(self):
+        parts = deque()
+        pointer = self
+        while pointer:
+            parts.appendleft(pointer.get_name())
+            pointer = pointer.get_parent()
+        return "/".join(parts)
+
+    def get_path(self) -> str:
+        return self.path
+
+    def get_size(self) -> int:
+        my_files = sum(
+            map(
+                lambda file: file.get_size(),
+                self.get_files()
+            )
         )
-        if len(self.get_directories()) == 0:
-            return subtotal
-        
-        for directory in self.get_directories():
-            return directory.get_size(subtotal=subtotal)
+        return my_files + sum(
+            map(
+                lambda directory: directory.get_size(),
+                self.get_directories()
+            )
+        )
 
 
 
@@ -47,6 +64,7 @@ class File:
     def get_size(self) -> int:
         return self.size
     
+
 class Filesystem:
     def __init__(self) -> None:
         self.root = Directory("/", None)

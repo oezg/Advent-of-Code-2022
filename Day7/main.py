@@ -1,6 +1,9 @@
 from typing import Iterator
 from filesystem import *
 
+TOTAL_DISK_SPACE_AVAILABLE = 70_000_000
+SPACE_NECESSARY = 30_000_000
+DIRECTORY_SIZE_LIMIT = 100_000
 
 def lines_generator() -> Iterator[str]:
     with open("input.txt", "r") as file:
@@ -11,16 +14,20 @@ def main():
     filesystem = Filesystem()
 
     def directory_already_exists(name: str) -> bool:
-        for directory in filesystem.get_current().get_directories():
-            if name == directory.get_name():
-                return True
-        return False
+        return any(
+            map(
+                lambda directory: name == directory.get_name(),
+                filesystem.get_current().get_directories()
+            )
+        )
 
     def file_already_exists(name: str) -> bool:
-        for file in filesystem.get_current().get_files():
-            if name == file.get_name():
-                return True
-        return False
+        return any(
+            map(
+                lambda file: name == file.get_name(),
+                filesystem.get_current().get_files()
+            )
+        )
 
     def find_child_directory(dirname: str) -> Directory:
         for directory in filesystem.get_current().get_directories():
@@ -64,11 +71,38 @@ def main():
         else:
             add_file(parts[0], parts[1])
 
+    directories_size_limited = list()
+
+    def traverse_1(pointer=filesystem.get_root()):
+        if pointer.get_size() <= DIRECTORY_SIZE_LIMIT:
+            directories_size_limited.append(pointer)
+        for directory in pointer.get_directories():
+            traverse_1(directory)
+    traverse_1()
+
+    result_1 = sum(
+        dir.get_size() for dir in directories_size_limited
+    )
+
+    sizes = set()
+
+    def traverse_2(pointer=filesystem.get_root()):
+        sizes.add(pointer.get_size())
+        for directory in pointer.get_directories():
+            traverse_2(directory)
+    traverse_2()
+
+    space_need = SPACE_NECESSARY - (TOTAL_DISK_SPACE_AVAILABLE - filesystem.get_root().get_size())
+
+    def find_smallest_size_enough():
+        for size in sorted(sizes):
+            if size >= space_need:
+                return size
 
 
-    result = filesystem.get_root().get_size()
-    print(result)
+    result_2 = find_smallest_size_enough()
 
+    print(result_2)
 
 if __name__ == "__main__":
     main()
